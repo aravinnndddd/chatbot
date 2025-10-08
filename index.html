@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gemini Chat Bot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f0f0f0;
+      }
+      #chat-container {
+        width: 400px;
+        margin: 50px auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background: white;
+      }
+      #chat-box {
+        height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 5px;
+        margin-bottom: 10px;
+        background: #fafafa;
+      }
+      #user-input {
+        width: 75%;
+        padding: 5px;
+      }
+      #send-btn {
+        width: 22%;
+        padding: 5px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      #send-btn:hover {
+        background: #45a049;
+      }
+      .message {
+        margin: 5px 0;
+      }
+      .user-message {
+        color: rgb(0, 255, 162);
+      }
+      .ai-message {
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chat-container">
+      <div id="chat-box"></div>
+      <input type="text" id="user-input" placeholder="Type a message..." />
+      <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+      const chatBox = document.getElementById("chat-box");
+      const userInput = document.getElementById("user-input");
+      const sendBtn = document.getElementById("send-btn");
+
+      const API_KEY = ".........................."; // ⚠️ Replace with your Gemini key
+
+      async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        appendMessage("You", message);
+        userInput.value = "";
+
+        try {
+          const res = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-goog-api-key": API_KEY,
+              },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: message }] }],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 200 },
+              }),
+            }
+          );
+
+          const data = await res.json();
+
+          const reply =
+            data?.candidates?.[0]?.content?.parts[0]?.text ||
+            "No response from AI";
+
+          appendMessage("Gemini", reply);
+        } catch (err) {
+          console.error(err);
+          appendMessage("System", "Error connecting to AI.");
+        }
+      }
+
+      function appendMessage(sender, text) {
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add(
+          "message",
+          sender === "You" ? "user-message" : "ai-message"
+        );
+        msgDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      sendBtn.addEventListener("click", sendMessage);
+      userInput.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") sendMessage();
+      });
+    </script>
+  </body>
+</html>
